@@ -19,7 +19,7 @@ class OrderModel(models.Model):
     total = models.SmallIntegerField()
 
     user = models.ForeignKey(CustomUserModel, on_delete=models.CASCADE, related_name='orders')
-    courier = models.ForeignKey(CustomUserModel, on_delete=models.PROTECT, related_name='delivers')
+    courier = models.ForeignKey(CustomUserModel, on_delete=models.PROTECT, related_name='delivers', null=True)
 
 
 class OrderPizzaSizeModel(models.Model):

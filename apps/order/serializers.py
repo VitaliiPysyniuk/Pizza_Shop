@@ -20,6 +20,7 @@ class OrderSerializer(ModelSerializer):
         model = OrderModel
         fields = ['id', 'user', 'courier', 'status', 'creation_time', 'confirmation_time', 'delivery_start_time',
                   'delivery_end_time', 'delivery_address', 'payment_method', 'comment', 'total', 'pizzas']
+        extra_kwargs = {'courier': {'required': False}}
 
     def create(self, validated_data):
         pizzas = list(validated_data.pop('pizzas'))

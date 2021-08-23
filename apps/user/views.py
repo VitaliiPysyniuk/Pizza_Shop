@@ -20,6 +20,11 @@ class CourierUpdateView(UpdateAPIView):
     serializer_class = UserSerializer
 
 
+class UserFavoritesListCreateView(ListCreateAPIView):
+    pass
+
+
+
 
 
 
