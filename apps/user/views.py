@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
-from rest_framework.generics import ListCreateAPIView, UpdateAPIView, get_object_or_404
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import ListCreateAPIView, UpdateAPIView, DestroyAPIView
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, UserFavoritesSerializer
+from .models import UserFavoritesModel
 from .permissions import IsManager
 
 UserModel = get_user_model()
@@ -21,13 +22,22 @@ class CourierUpdateView(UpdateAPIView):
 
 
 class UserFavoritesListCreateView(ListCreateAPIView):
-    pass
+    permission_classes = [IsAuthenticated]
+    queryset = UserFavoritesModel.objects.all()
+    serializer_class = UserFavoritesSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'user':
+            return UserFavoritesModel.objects.filter(user_id=user.id)
+        return UserFavoritesModel.objects.all()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(user=user)
 
 
-
-
-
-
-
-
+class UserFavoriteDeleteView(DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = UserFavoritesModel.objects.all()
 
