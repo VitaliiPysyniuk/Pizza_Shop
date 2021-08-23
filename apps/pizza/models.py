@@ -21,4 +21,4 @@ class PizzaSizeModel(models.Model):
     weight = models.SmallIntegerField()
     price = models.SmallIntegerField()
 
-    pizza_id = models.ForeignKey(PizzaModel, on_delete=models.CASCADE, related_name='sizes')
+    pizza = models.ForeignKey(PizzaModel, on_delete=models.CASCADE, related_name='sizes')

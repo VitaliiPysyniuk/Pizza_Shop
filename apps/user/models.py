@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from .managers import CustomUserManager
 from ..pizza.models import PizzaSizeModel
 
+
 class CustomUserModel(AbstractBaseUser, PermissionsMixin):
     class Meta:
         db_table = 'user'
@@ -32,5 +33,5 @@ class UserFavoritesModel(models.Model):
     class Meta:
         db_table = 'user_favorites'
 
-    user_id = models.ForeignKey(CustomUserModel, on_delete=models.CASCADE, related_name='favorite_pizzas')
-    pizza_size_is = models.ForeignKey(PizzaSizeModel, on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUserModel, on_delete=models.CASCADE, related_name='favorite_pizzas')
+    pizza_size = models.ForeignKey(PizzaSizeModel, on_delete=models.CASCADE)

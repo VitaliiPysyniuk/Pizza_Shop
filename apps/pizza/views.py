@@ -23,8 +23,9 @@ class PizzaSizeCreateView(CreateAPIView):
 
     def perform_create(self, serializer):
         pk = self.kwargs.get('pk')
+        print(pk)
         pizza = get_object_or_404(PizzaModel, pk=pk)
-        serializer.save(pizza_id=pizza)
+        serializer.save(pizza=pizza)
 
 
 class PizzaUpdateDeleteView(RetrieveUpdateDestroyAPIView):
@@ -40,7 +41,6 @@ class PizzaSizeUpdateDeleteView(RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         pk = self.request.data['id']
-        # pk = self.kwargs.get('id')
         size = get_object_or_404(PizzaSizeModel, pk=pk)
         return size
 

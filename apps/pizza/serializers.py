@@ -4,14 +4,15 @@ from .models import PizzaModel, PizzaSizeModel
 
 
 class PizzaSizeSerializer(ModelSerializer):
+
     class Meta:
         model = PizzaSizeModel
-        fields = ['id', 'diameter', 'weight', 'price', 'pizza_id']
-        extra_kwargs = {'pizza_id': {'read_only': True}}
+        fields = ['id', 'diameter', 'weight', 'price', 'pizza']
+        extra_kwargs = {'pizza': {'read_only': True}}
 
 
 class PizzaSerializer(ModelSerializer):
-    sizes = PizzaSizeSerializer(many=True)
+    sizes = PizzaSizeSerializer(many=True, required=False)
 
     class Meta:
         model = PizzaModel
