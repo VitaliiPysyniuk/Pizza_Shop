@@ -1,10 +1,12 @@
 from django.urls import path
 
-from .views import UserCreateListView, CourierUpdateView, UserFavoritesListCreateView, UserFavoriteDeleteView
+from .views import UserCreateListView, UserRetrieveUpdateView, UserFavoritesListCreateView, UserFavoriteDeleteView, \
+    UserFavoritesListView
 
 urlpatterns = [
-    path('', UserCreateListView.as_view(), name='list_all_users'),
-    path('/<int:pk>/update', CourierUpdateView.as_view(), name='update_courier_info'),
-    path('/favorite', UserFavoritesListCreateView.as_view(), name='list_create_user_favorite'),
-    path('/favorite/<int:pk>', UserFavoriteDeleteView.as_view(), name='delete_user_favorite')
+    path('', UserCreateListView.as_view(), name='get_all_registered_users'),
+    path('/<int:pk>', UserRetrieveUpdateView.as_view(), name='get_update_user_information'),
+    path('/favorites', UserFavoritesListView.as_view(), name='get_favorites_of_all_users'),
+    path('/<int:user_id>/favorites', UserFavoritesListCreateView.as_view(), name='get_create_user_favorites'),
+    path('/<int:user_id>/favorites/<int:pk>', UserFavoriteDeleteView.as_view(), name='delete_user_favorite')
 ]

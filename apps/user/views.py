@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
-from rest_framework.generics import ListCreateAPIView, UpdateAPIView, DestroyAPIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.generics import ListCreateAPIView, DestroyAPIView, RetrieveUpdateAPIView, ListAPIView
+from rest_framework.permissions import IsAuthenticated
 
 from .serializers import UserSerializer, UserFavoritesSerializer
 from .models import UserFavoritesModel
@@ -15,29 +15,53 @@ class UserCreateListView(ListCreateAPIView):
     serializer_class = UserSerializer
 
 
-class CourierUpdateView(UpdateAPIView):
-    permission_classes = [IsAuthenticated, IsManager]
+class UserRetrieveUpdateView(RetrieveUpdateAPIView):
     queryset = UserModel.objects.all()
     serializer_class = UserSerializer
 
+    def get_permissions(self):
+        keys = self.request.data.keys()
+        if ('role' in keys) or ('is_active' in keys):
+            return [IsAuthenticated(), IsManager()]
+        return [IsAuthenticated()]
 
-class UserFavoritesListCreateView(ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+
+class UserFavoritesListView(ListAPIView):
+    permission_classes = [IsAuthenticated, IsManager]
     queryset = UserFavoritesModel.objects.all()
     serializer_class = UserFavoritesSerializer
 
-    def get_queryset(self):
+
+class UserFavoritesListCreateView(ListCreateAPIView):
+    serializer_class = UserFavoritesSerializer
+
+    def get_permissions(self):
         user = self.request.user
-        if user.role == 'user':
-            return UserFavoritesModel.objects.filter(user_id=user.id)
-        return UserFavoritesModel.objects.all()
+        user_id = self.kwargs.get('user_id')
+        if user.id == user_id:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsManager()]
+
+    def get_queryset(self):
+        user_id = self.kwargs.get('user_id')
+        queryset = UserFavoritesModel.objects.filter(user_id=user_id)
+        return queryset
 
     def perform_create(self, serializer):
-        user = self.request.user
-        serializer.save(user=user)
+        print(self.request.data)
+        user_id = self.kwargs.get('user_id')
+        serializer.save(user_id=user_id)
 
 
 class UserFavoriteDeleteView(DestroyAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = UserFavoritesModel.objects.all()
+
+    def get_object(self):
+        pk = self.kwargs.get('pk')
+        queryset = UserFavoritesModel.objects.filter(pk=pk)
+        return queryset
+
+
+
+
 

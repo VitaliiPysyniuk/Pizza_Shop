@@ -2,7 +2,6 @@ from rest_framework.serializers import ModelSerializer
 from django.contrib.auth import get_user_model
 
 from .models import UserFavoritesModel
-from ..pizza.serializers import PizzaSizeSerializer
 
 UserModel = get_user_model()
 
@@ -17,8 +16,6 @@ class UserSerializer(ModelSerializer):
 
 
 class UserFavoritesSerializer(ModelSerializer):
-    pizza_size = PizzaSizeSerializer()
-
     class Meta:
         model = UserFavoritesModel
         fields = ['id', 'user', 'pizza_size']

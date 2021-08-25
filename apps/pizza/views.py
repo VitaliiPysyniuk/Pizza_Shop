@@ -17,32 +17,35 @@ class PizzaCreateView(CreateAPIView):
     serializer_class = PizzaSerializer
 
 
-class PizzaSizeCreateView(CreateAPIView):
-    permission_classes = [IsAuthenticated, IsManager]
-    serializer_class = PizzaSizeSerializer
-
-    def perform_create(self, serializer):
-        pk = self.kwargs.get('pk')
-        print(pk)
-        pizza = get_object_or_404(PizzaModel, pk=pk)
-        serializer.save(pizza=pizza)
-
-
 class PizzaUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsManager]
     queryset = PizzaModel.objects.all()
     serializer_class = PizzaSerializer
 
 
-class PizzaSizeUpdateDeleteView(RetrieveUpdateDestroyAPIView):
+class PizzaSizeCreateView(CreateAPIView):
     permission_classes = [IsAuthenticated, IsManager]
-    queryset = PizzaModel.objects.all()
     serializer_class = PizzaSizeSerializer
 
-    def get_object(self):
-        pk = self.request.data['id']
-        size = get_object_or_404(PizzaSizeModel, pk=pk)
-        return size
+    def perform_create(self, serializer):
+        pizza_id = self.kwargs.get('pizza_id')
+        pizza = get_object_or_404(PizzaModel, pk=pizza_id)
+        serializer.save(pizza=pizza)
+
+
+class PizzaSizeUpdateDeleteView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, IsManager]
+    serializer_class = PizzaSizeSerializer
+
+    def get_queryset(self):
+        pizza_id = self.kwargs.get('pizza_id')
+        pk = self.kwargs.get('pk')
+        queryset = PizzaSizeModel.objects.filter(pizza_id=pizza_id, id=pk)
+        return queryset
+
+
+
+
 
 
 
