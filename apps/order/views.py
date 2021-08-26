@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import OrderModel, OrderPizzaSizeModel
 from .serializers import OrderSerializer, OrderPizzaSizeSerializer
-from ..user.permissions import IsManager, IsCourier
+from ..user.permissions import IsManager
 
 
 class OrderListCreateView(ListCreateAPIView):
@@ -12,18 +12,22 @@ class OrderListCreateView(ListCreateAPIView):
     serializer_class = OrderSerializer
     queryset = OrderModel.objects.all()
 
-
-class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
-    permission_classes = [IsAuthenticated, IsManager]
-    serializer_class = OrderSerializer
-
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'manager':
+        print(user)
+        if user.is_anonymous:
+            return OrderModel.objects.none()
+        elif user.role == 'manager':
             return OrderModel.objects.all()
         elif user.role == 'courier':
             return OrderModel.objects.filter(courier_id=user.id)
         return OrderModel.objects.filter(user_id=user.id)
+
+
+class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated, IsManager]
+    serializer_class = OrderSerializer
+    queryset = OrderModel.objects.all()
 
 
 class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):

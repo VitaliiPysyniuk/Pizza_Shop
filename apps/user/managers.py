@@ -4,7 +4,7 @@ from django.contrib.auth.base_user import BaseUserManager
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **extra_kwargs):
         if extra_kwargs.get('is_active') is not True:
-            extra_kwargs['is_active'] = True
+            extra_kwargs['is_active'] = False
 
         if not email:
             raise ValueError('User has to have email!')
