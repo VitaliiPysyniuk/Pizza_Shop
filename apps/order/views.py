@@ -1,6 +1,7 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, \
-    UpdateAPIView, ListAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from datetime import datetime
+import pytz
 
 from .models import OrderModel, OrderPizzaSizeModel
 from .serializers import OrderSerializer, OrderPizzaSizeSerializer
@@ -29,6 +30,18 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
     serializer_class = OrderSerializer
     queryset = OrderModel.objects.all()
 
+    def perform_update(self, serializer):
+        tine_fields_depend_on_status = {'confirmed': 'confirmation_time', 'in_the_road': 'delivery_start_time',
+                                        'delivered': 'delivery_end_time'}
+        data = self.request.data
+        if 'status' in data.keys():
+            timezone = pytz.timezone('Etc/GMT-3')
+            current_server_time = datetime.now(tz=timezone)
+            time_field_to_update = tine_fields_depend_on_status[data['status']]
+            serializer.save(**{time_field_to_update: current_server_time})
+        else:
+            serializer.save()
+
 
 class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsManager]
@@ -39,4 +52,3 @@ class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
         pk = self.kwargs.get('pk')
         queryset = OrderPizzaSizeModel.objects.filter(order_id=order_id, id=pk)
         return queryset
-

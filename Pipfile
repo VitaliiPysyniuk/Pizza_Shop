@@ -12,6 +12,7 @@ pillow = "*"
 mysqlclient = "*"
 psycopg2 = "*"
 psycopg2-binary = "*"
+coverage = "*"
 
 [dev-packages]
 

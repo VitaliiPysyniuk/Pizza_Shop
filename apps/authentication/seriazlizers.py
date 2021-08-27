@@ -19,7 +19,7 @@ class UserRegisterSerializer(ModelSerializer):
         data = {
             'subject': 'Account activation from Pizza shop',
             'body': f'Dear, {user.first_name} {user.last_name}.\n'
-                    f'Tap on this link to activate your account.\n'
+                    f'Tap on the link below to activate your account.\n'
                     f'Link: http://localhost:8000/api/v1/auth/activate?token={token}',
             'to': [user.email]
         }

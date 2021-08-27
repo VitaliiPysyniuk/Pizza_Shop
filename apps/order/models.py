@@ -9,14 +9,14 @@ class OrderModel(models.Model):
         db_table = 'order'
 
     status = models.CharField(max_length=24)
-    creation_time = models.DateTimeField(auto_created=True)
-    confirmation_time = models.DateTimeField()
-    delivery_start_time = models.DateTimeField()
-    delivery_end_time = models.DateTimeField()
+    creation_time = models.DateTimeField(auto_now_add=True)
+    confirmation_time = models.DateTimeField(auto_now_add=True)
+    delivery_start_time = models.DateTimeField(auto_now_add=True)
+    delivery_end_time = models.DateTimeField(auto_now_add=True)
     delivery_address = models.CharField(max_length=100)
     payment_method = models.CharField(max_length=4)
     comment = models.CharField(max_length=200)
-    total = models.SmallIntegerField()
+    total = models.SmallIntegerField(default=0)
 
     user = models.ForeignKey(CustomUserModel, on_delete=models.CASCADE, related_name='orders')
     courier = models.ForeignKey(CustomUserModel, on_delete=models.PROTECT, related_name='delivers', null=True)
