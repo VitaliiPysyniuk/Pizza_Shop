@@ -20,7 +20,7 @@ class OrderSerializer(ModelSerializer):
         model = OrderModel
         fields = ['id', 'user', 'courier', 'status', 'creation_time', 'confirmation_time', 'delivery_start_time',
                   'delivery_end_time', 'delivery_address', 'payment_method', 'comment', 'total', 'pizzas']
-        extra_kwargs = {'courier': {'required': False}, 'total': {'read_only': True}}
+        extra_kwargs = {'courier': {'required': False}, 'total': {'read_only': True}, 'user': {'read_only': True}}
 
     def create(self, validated_data):
         pizzas = list(validated_data.pop('pizzas'))
@@ -28,11 +28,11 @@ class OrderSerializer(ModelSerializer):
         total = 0
         for pizza in pizzas:
             pizza_size_serializer = PizzaSizeSerializer(pizza['pizza_size'])
-            total += pizza_size_serializer.data.get('price') * pizza['number_of_pizza']
             pizza['pizza_size'] = pizza_size_serializer.data.get('id')
             serializer = OrderPizzaSizeSerializer(data=pizza)
             serializer.is_valid(raise_exception=True)
             serializer.save(order=order)
+            total += pizza_size_serializer.data.get('price') * pizza['number_of_pizza']
         order.total = total
 
         return order

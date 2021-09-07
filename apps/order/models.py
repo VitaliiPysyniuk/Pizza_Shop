@@ -8,7 +8,7 @@ class OrderModel(models.Model):
     class Meta:
         db_table = 'order'
 
-    status = models.CharField(max_length=24)
+    status = models.CharField(max_length=24, default='created')
     creation_time = models.DateTimeField(auto_now_add=True)
     confirmation_time = models.DateTimeField(auto_now_add=True)
     delivery_start_time = models.DateTimeField(auto_now_add=True)

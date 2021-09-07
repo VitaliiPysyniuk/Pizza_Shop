@@ -3,12 +3,6 @@ from django.contrib.auth.base_user import BaseUserManager
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **extra_kwargs):
-        if extra_kwargs.get('is_active') is not True:
-            extra_kwargs['is_active'] = False
-
-        if not email:
-            raise ValueError('User has to have email!')
-
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_kwargs)
         user.set_password(password)
@@ -20,8 +14,8 @@ class CustomUserManager(BaseUserManager):
         extra_kwargs.setdefault('is_active', True)
 
         if extra_kwargs.get('role') != 'manager':
-            raise ValueError('User role has to be \'manager\'!')
+            raise ValueError('User role has to be \'manager\'.')
         if extra_kwargs.get('is_active') is not True:
-            raise ValueError('User has to be active!')
+            raise ValueError('User has to be active.')
         return self.create_user(email, password, **extra_kwargs)
 

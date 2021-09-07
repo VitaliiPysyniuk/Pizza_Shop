@@ -18,10 +18,12 @@ class UserCreateListView(ListCreateAPIView):
 class UserRetrieveUpdateView(RetrieveUpdateAPIView):
     queryset = UserModel.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsManager]
 
     def get_permissions(self):
         keys = self.request.data.keys()
-        if ('role' in keys) or ('is_active' in keys):
+        print(self.request.user.id + 1000)
+        if ('role' in keys) or ('is_active' in keys) or (self.request.user.id == self.kwargs.get('pk')):
             return [IsAuthenticated(), IsManager()]
         return [IsAuthenticated()]
 

@@ -1,21 +1,26 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, \
+    GenericAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 from datetime import datetime
 import pytz
 
 from .models import OrderModel, OrderPizzaSizeModel
 from .serializers import OrderSerializer, OrderPizzaSizeSerializer
-from ..user.permissions import IsManager
+from ..user.permissions import IsManager, IsCourier
+
+UserModel = get_user_model()
 
 
 class OrderListCreateView(ListCreateAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     serializer_class = OrderSerializer
     queryset = OrderModel.objects.all()
 
     def get_queryset(self):
         user = self.request.user
-        print(user)
         if user.is_anonymous:
             return OrderModel.objects.none()
         elif user.role == 'manager':
@@ -24,20 +29,30 @@ class OrderListCreateView(ListCreateAPIView):
             return OrderModel.objects.filter(courier_id=user.id)
         return OrderModel.objects.filter(user_id=user.id)
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(user=user)
+
 
 class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
-    permission_classes = [IsAuthenticated, IsManager]
     serializer_class = OrderSerializer
     queryset = OrderModel.objects.all()
 
+    def get_permissions(self):
+        data = self.request.data
+
+        if data.keys() == ['status']:
+            return [IsAuthenticated(), IsCourier()]
+        return [IsAuthenticated(), IsManager()]
+
     def perform_update(self, serializer):
-        tine_fields_depend_on_status = {'confirmed': 'confirmation_time', 'in_the_road': 'delivery_start_time',
+        time_fields_depend_on_status = {'confirmed': 'confirmation_time', 'in_the_road': 'delivery_start_time',
                                         'delivered': 'delivery_end_time'}
         data = self.request.data
         if 'status' in data.keys():
             timezone = pytz.timezone('Etc/GMT-3')
             current_server_time = datetime.now(tz=timezone)
-            time_field_to_update = tine_fields_depend_on_status[data['status']]
+            time_field_to_update = time_fields_depend_on_status[data['status']]
             serializer.save(**{time_field_to_update: current_server_time})
         else:
             serializer.save()
@@ -52,3 +67,12 @@ class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
         pk = self.kwargs.get('pk')
         queryset = OrderPizzaSizeModel.objects.filter(order_id=order_id, id=pk)
         return queryset
+
+
+class OrderShortDistanceDeliveryView(GenericAPIView):
+    permission_classes = [IsAuthenticated, IsCourier]
+
+    def get(self, *args, **kwargs):
+        courier = self.request.user
+
+        return Response([], status.HTTP_200_OK)
