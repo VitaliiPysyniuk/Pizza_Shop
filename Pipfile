@@ -13,6 +13,8 @@ mysqlclient = "*"
 psycopg2 = "*"
 psycopg2-binary = "*"
 coverage = "*"
+requests = "*"
+numpy = "*"
 
 [dev-packages]
 

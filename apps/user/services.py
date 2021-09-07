@@ -8,16 +8,15 @@ class MapsAPIUse:
     direction_api_url = 'https://maps.googleapis.com/maps/api/distancematrix/json'
 
     @staticmethod
-    def get_distance_and_duration_between_addresses(start_address, end_addresses, mode, departure_time):
+    def get_distance_and_duration_between_addresses(start_address, end_addresses):
         params = {
             'origins': start_address,
             'destinations': end_addresses,
-            'mode': mode,
-            'departure_time': departure_time,
+            'mode': 'driving',
+            'departure_time': 'now',
             'language': 'uk',
             'key': MapsAPIUse.api_key
         }
-
         response = requests.get(url=MapsAPIUse.direction_api_url, params=params).json()
 
         rows = response['rows']

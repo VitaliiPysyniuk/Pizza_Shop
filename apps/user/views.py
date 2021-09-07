@@ -1,10 +1,15 @@
 from django.contrib.auth import get_user_model
-from rest_framework.generics import ListCreateAPIView, DestroyAPIView, RetrieveUpdateAPIView, ListAPIView
+from rest_framework.generics import ListCreateAPIView, DestroyAPIView, RetrieveUpdateAPIView, ListAPIView, \
+    GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 
 from .serializers import UserSerializer, UserFavoritesSerializer
 from .models import UserFavoritesModel
-from .permissions import IsManager
+from .permissions import IsManager, IsCourier
+from ..order.models import OrderModel
+from .services import MapsAPIUse, Solver
 
 UserModel = get_user_model()
 
@@ -64,6 +69,29 @@ class UserFavoriteDeleteView(DestroyAPIView):
         return queryset
 
 
+class CourierDeliveriesSortView(GenericAPIView):
+    permission_classes = [IsAuthenticated, IsCourier]
 
+    def get(self, *args, **kwargs):
+        user = self.request.user
+        courier_orders = OrderModel.objects.filter(courier_id=user.id)
+        addresses = list()
+        for order in courier_orders:
+            addresses.append(order.delivery_address)
 
+        params = {
+            'start_address': '|'.join(addresses),
+            'end_addresses': '|'.join(addresses)
+        }
 
+        maps_api_result = MapsAPIUse.get_distance_and_duration_between_addresses(**params)
+        duration_matrix = maps_api_result['duration_matrix']
+
+        solver = Solver(duration_matrix)
+        solver_result = solver.branch_and_bound_method()
+
+        route = list()
+        for way in solver_result['tour']:
+            route.append({'from': addresses[way['from']], 'to': addresses[way['to']]})
+
+        return Response(route, status.HTTP_200_OK)
