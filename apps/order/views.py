@@ -1,10 +1,11 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, \
-    GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+    GenericAPIView, CreateAPIView
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from datetime import datetime
+from ..user.serializers import UserSerializer
 import pytz
 
 from .models import OrderModel, OrderPizzaSizeModel
@@ -12,6 +13,23 @@ from .serializers import OrderSerializer, OrderPizzaSizeSerializer
 from ..user.permissions import IsManager, IsCourier
 
 UserModel = get_user_model()
+
+
+class OrderCreateView(CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = OrderSerializer
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        if user.is_anonymous:
+            user_data = self.request.data.pop('user')
+            print(user_data)
+            user_serializer = UserSerializer(data=user_data)
+            user_serializer.is_valid(raise_exception=True)
+            user = user_serializer.save()
+
+        serializer.save(user=user)
 
 
 class OrderListCreateView(ListCreateAPIView):
@@ -74,5 +92,4 @@ class OrderShortDistanceDeliveryView(GenericAPIView):
 
     def get(self, *args, **kwargs):
         courier = self.request.user
-
         return Response([], status.HTTP_200_OK)
