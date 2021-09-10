@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 from django.contrib.auth import get_user_model
 from rest_framework.generics import ListCreateAPIView, DestroyAPIView, RetrieveUpdateAPIView, ListAPIView, \
     GenericAPIView
@@ -27,7 +29,6 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
 
     def get_permissions(self):
         keys = self.request.data.keys()
-        print(self.request.user.id + 1000)
         if ('role' in keys) or ('is_active' in keys) or (self.request.user.id == self.kwargs.get('pk')):
             return [IsAuthenticated(), IsManager()]
         return [IsAuthenticated()]
@@ -55,7 +56,6 @@ class UserFavoritesListCreateView(ListCreateAPIView):
         return queryset
 
     def perform_create(self, serializer):
-        print(self.request.data)
         user_id = self.kwargs.get('user_id')
         serializer.save(user_id=user_id)
 
@@ -75,23 +75,40 @@ class CourierDeliveriesSortView(GenericAPIView):
     def get(self, *args, **kwargs):
         user = self.request.user
         courier_orders = OrderModel.objects.filter(courier_id=user.id)
-        addresses = list()
+        addresses = ['Шараневича 28, Львів']
         for order in courier_orders:
             addresses.append(order.delivery_address)
 
         params = {
-            'start_address': '|'.join(addresses),
-            'end_addresses': '|'.join(addresses)
+            'addresses': '|'.join(addresses),
+            'mode': 'driving'
         }
 
-        maps_api_result = MapsAPIUse.get_distance_and_duration_between_addresses(**params)
+        maps_api_result = MapsAPIUse.get_value_matrix_between_addresses(**params)
         duration_matrix = maps_api_result['duration_matrix']
 
         solver = Solver(duration_matrix)
         solver_result = solver.branch_and_bound_method()
 
+        tour = solver_result['tour']
         route = list()
-        for way in solver_result['tour']:
-            route.append({'from': addresses[way['from']], 'to': addresses[way['to']]})
+        route_points = list()
+        previous_place = 0
+        i = 0
 
-        return Response(route, status.HTTP_200_OK)
+        while tour:
+            if tour[i]['from'] == previous_place:
+                # route.append(tour[i])
+                route.append({'from': addresses[tour[i]['from']], 'to': addresses[tour[i]['to']]})
+                route_points.append(addresses[tour[i]['from']])
+                previous_place = tour[i]['to']
+                tour.pop(i)
+                i = 0
+                continue
+
+            i += 1
+
+        route_points.append(route[-1]['to'])
+
+        result = {'route_points': route_points, 'route': route}
+        return Response(result, status.HTTP_200_OK)

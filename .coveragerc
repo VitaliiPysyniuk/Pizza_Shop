@@ -1,6 +1,6 @@
 [run]
 source =
-        apps/user
+        apps/user/
 omit =
       */migrations/*
       */__init__.py

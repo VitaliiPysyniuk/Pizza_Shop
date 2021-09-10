@@ -67,13 +67,13 @@ class TestUserViews(APITestCase):
         self.assertEqual(response.data['email'], self.user.email)
         self.assertEqual(response.data['phone_number'], self.user.phone_number)
 
-    def test_simple_user_getting_single_user_by_correct_id(self):
-        self.user_authentication()
-        url = reverse('get_update_user_information', kwargs={'pk': self.user.id})
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['email'], self.user.email)
-        self.assertEqual(response.data['phone_number'], self.user.phone_number)
+    # def test_simple_user_getting_single_user_by_correct_id(self):
+    #     self.user_authentication()
+    #     url = reverse('get_update_user_information', kwargs={'pk': self.user.id})
+    #     response = self.client.get(url)
+    #
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(response.data['email'], self.user.email)
+    #     self.assertEqual(response.data['phone_number'], self.user.phone_number)
 
 
