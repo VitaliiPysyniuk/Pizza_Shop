@@ -8,7 +8,6 @@ from ..pizza.serializers import PizzaSizeSerializer
 class OrderPizzaSizeSerializer(ModelSerializer):
     class Meta:
         model = OrderPizzaSizeModel
-        fields = ['id', 'pizza_size', 'number_of_pizza']
         fields = ['id', 'order', 'pizza_size', 'number_of_pizza']
         extra_kwargs = {'order': {'read_only': True}}
 
@@ -36,6 +35,4 @@ class OrderSerializer(ModelSerializer):
         order.total = total
 
         return order
-
-
 

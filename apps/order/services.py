@@ -1,19 +1,21 @@
 import requests
+import os
 
 
-class Distance:
-    api_key = 'AIzaSyATtXEM2gWMdhxjky2KMF7ebfJ58WmevQE'
-    direction_api_url = 'https://maps.googleapis.com/maps/api/distancematrix/json'
+class GeocodingAPI:
+    api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
+    geocoding_api_url = 'https://maps.googleapis.com/maps/api/geocode/json'
 
     @staticmethod
-    def get_distance_and_duration_between_addresses(self, start_address, end_address, mode, language):
+    def validate_addresses(address):
         params = {
-            'origins': start_address,
-            'destinations': end_address,
-            'mode': mode,
-            'language': language,
-            'key': Distance.api_key
+            'address': address,
+            'language': 'uk',
+            'key': GeocodingAPI.api_key
         }
 
-        response = requests.get(url=Distance.direction_api_url, params=params).json()
-        print(response)
+        response = requests.get(url=GeocodingAPI.geocoding_api_url, params=params).json()
+        result = response['results'][0]
+
+        if 'partial_match' in result.keys() and result['types'][0] != 'street_address':
+            raise ValueError('Given delivery address is not valid.')

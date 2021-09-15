@@ -1,38 +1,50 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, \
-    GenericAPIView, CreateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView,\
+    GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from datetime import datetime
 from ..user.serializers import UserSerializer
 import pytz
+from django.db.models import Count, Sum
+from datetime import datetime
 
 from .models import OrderModel, OrderPizzaSizeModel
 from .serializers import OrderSerializer, OrderPizzaSizeSerializer
 from ..user.permissions import IsManager, IsCourier
+from .services import GeocodingAPI
+
 
 UserModel = get_user_model()
 
 
-class OrderCreateView(CreateAPIView):
+class OrderCreateView(GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = OrderSerializer
 
-    def perform_create(self, serializer):
+    def post(self, request, *args, **kwargs):
+        delivery_address = self.request.data['delivery_address']
+
+        try:
+            GeocodingAPI.validate_addresses(delivery_address)
+        except ValueError as err:
+            return Response({'error': str(err)}, status.HTTP_400_BAD_REQUEST)
+
         user = self.request.user
 
         if user.is_anonymous:
             user_data = self.request.data.pop('user')
-            print(user_data)
             user_serializer = UserSerializer(data=user_data)
             user_serializer.is_valid(raise_exception=True)
             user = user_serializer.save()
 
-        serializer.save(user=user)
+        order_serializer = OrderSerializer(data=self.request.data)
+        order_serializer.is_valid()
+        order_serializer.save(user=user)
+
+        return Response(order_serializer.data, status.HTTP_200_OK)
 
 
-class OrderListCreateView(ListCreateAPIView):
+class OrderListView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = OrderSerializer
     queryset = OrderModel.objects.all()
@@ -47,10 +59,6 @@ class OrderListCreateView(ListCreateAPIView):
             return OrderModel.objects.filter(courier_id=user.id)
         return OrderModel.objects.filter(user_id=user.id)
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        serializer.save(user=user)
-
 
 class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
     serializer_class = OrderSerializer
@@ -59,7 +67,7 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
     def get_permissions(self):
         data = self.request.data
 
-        if data.keys() == ['status']:
+        if list(data) == ['status']:
             return [IsAuthenticated(), IsCourier()]
         return [IsAuthenticated(), IsManager()]
 
@@ -87,9 +95,41 @@ class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
         return queryset
 
 
-class OrderShortDistanceDeliveryView(GenericAPIView):
-    permission_classes = [IsAuthenticated, IsCourier]
+class StatisticView(GenericAPIView):
+    # permission_classes = [IsAuthenticated, IsManager]
+    permission_classes = [AllowAny]
 
     def get(self, *args, **kwargs):
-        courier = self.request.user
-        return Response([], status.HTTP_200_OK)
+        query_params = self.request.query_params
+        keys = query_params.keys()
+        group_by_keys = {'title': 'pizzas__pizza_size__pizza__title', 'size': 'pizzas__pizza_size',
+                         'courier': 'courier', 'week_day': 'creation_time__week_day', 'month': 'creation_time__month'}
+
+        result = OrderModel.objects.all()
+
+        if 'date_from' in keys and 'date_to' in keys:
+            result = result.filter(creation_time__date__gte=query_params['date_from'],
+                                   creation_time__date__lte=query_params['date_to'])
+
+        if 'hour_from' in keys and 'hour_to' in keys:
+            if int(query_params['hour_to']) >= int(query_params['hour_from']):
+                result = result.filter(creation_time__hour__gte=query_params['hour_from'],
+                                       creation_time__hour__lte=query_params['hour_to'])
+            else:
+                result = result.filter(creation_time__hour__gte=query_params['hour_to'],
+                                       creation_time__hour__lte=query_params['hour_from'])
+
+        if 'group' in keys:
+            group_by = [group_by_keys[item] for item in query_params['group'].split(',')]
+            result = result.values(*group_by)
+
+            if 'courier' in query_params['group'].split(','):
+                result = result.annotate(number_of_delivered_orders=Count('id')) \
+                    .order_by('-number_of_delivered_orders')
+            else:
+                result = result.annotate(number_of_pizza=Sum('pizzas__number_of_pizza')).order_by('-number_of_pizza')
+
+        else:
+            result = OrderSerializer(instance=result, many=True).data
+
+        return Response(result, status=status.HTTP_200_OK)
