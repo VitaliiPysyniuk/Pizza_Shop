@@ -98,14 +98,12 @@ class CourierDeliveriesSortView(GenericAPIView):
 
         while tour:
             if tour[i]['from'] == previous_place:
-                # route.append(tour[i])
                 route.append({'from': addresses[tour[i]['from']], 'to': addresses[tour[i]['to']]})
                 route_points.append(addresses[tour[i]['from']])
                 previous_place = tour[i]['to']
                 tour.pop(i)
                 i = 0
                 continue
-
             i += 1
 
         route_points.append(route[-1]['to'])
