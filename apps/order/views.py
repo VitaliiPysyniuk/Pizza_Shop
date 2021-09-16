@@ -71,9 +71,6 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
             return [IsAuthenticated(), IsCourier()]
         return [IsAuthenticated(), IsManager()]
 
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
-
     def perform_update(self, serializer):
         time_fields_depend_on_status = {'confirmed': 'confirmation_time', 'in_the_road': 'delivery_start_time'}
         data = self.request.data
