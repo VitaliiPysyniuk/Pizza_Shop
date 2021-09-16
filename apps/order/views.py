@@ -6,14 +6,13 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from ..user.serializers import UserSerializer
 import pytz
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, F
 from datetime import datetime
 
 from .models import OrderModel, OrderPizzaSizeModel
 from .serializers import OrderSerializer, OrderPizzaSizeSerializer
 from ..user.permissions import IsManager, IsCourier
 from .services import GeocodingAPI
-
 
 UserModel = get_user_model()
 
@@ -72,14 +71,20 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
         return [IsAuthenticated(), IsManager()]
 
     def perform_update(self, serializer):
-        time_fields_depend_on_status = {'confirmed': 'confirmation_time', 'in_the_road': 'delivery_start_time',
-                                        'delivered': 'delivery_end_time'}
+        time_fields_depend_on_status = {'confirmed': 'confirmation_time', 'in_the_road': 'delivery_start_time'}
         data = self.request.data
         if 'status' in data.keys():
             timezone = pytz.timezone('Etc/GMT-3')
             current_server_time = datetime.now(tz=timezone)
-            time_field_to_update = time_fields_depend_on_status[data['status']]
-            serializer.save(**{time_field_to_update: current_server_time})
+
+            if data['status'] == 'delivered':
+                delivery_start_time = OrderSerializer(self.get_object()).data.get('delivery_start_time')
+                delivery_start_time = datetime.strptime(delivery_start_time, "%Y-%m-%dT%H:%M:%S.%f%z")
+                delivery_time = current_server_time - delivery_start_time
+                serializer.save(delivery_time=str(delivery_time).split('.')[0])
+            else:
+                time_field_to_update = time_fields_depend_on_status[data['status']]
+                serializer.save(**{time_field_to_update: current_server_time})
         else:
             serializer.save()
 
@@ -119,6 +124,16 @@ class StatisticView(GenericAPIView):
                 result = result.filter(creation_time__hour__gte=query_params['hour_to'],
                                        creation_time__hour__lte=query_params['hour_from'])
 
+        if 'week_day' in keys:
+            result = result.filter(creation_time__week_day=query_params['week_day'])
+
+        if 'month' in keys:
+            result = result.filter(creation_time__month=query_params['month'])
+
+        if 'delivery_time' in keys and bool(query_params['delivery_time']):
+            result = result.annotate(delivery_time=F('delivery_end_time__time') - F('delivery_start_time__time')) \
+                .order_by('-delivery_time')
+
         if 'group' in keys:
             group_by = [group_by_keys[item] for item in query_params['group'].split(',')]
             result = result.values(*group_by)
@@ -128,7 +143,6 @@ class StatisticView(GenericAPIView):
                     .order_by('-number_of_delivered_orders')
             else:
                 result = result.annotate(number_of_pizza=Sum('pizzas__number_of_pizza')).order_by('-number_of_pizza')
-
         else:
             result = OrderSerializer(instance=result, many=True).data
 
