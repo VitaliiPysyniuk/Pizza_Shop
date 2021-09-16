@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from ..user.serializers import UserSerializer
 import pytz
-from django.db.models import Count, Sum
-from datetime import datetime
+from django.db.models import Count, Sum, F, DateTimeField, Value, Avg
+from datetime import datetime, timedelta
 
 from .models import OrderModel, OrderPizzaSizeModel
 from .serializers import OrderSerializer, OrderPizzaSizeSerializer
@@ -119,6 +119,19 @@ class StatisticView(GenericAPIView):
                 result = result.filter(creation_time__hour__gte=query_params['hour_to'],
                                        creation_time__hour__lte=query_params['hour_from'])
 
+        if 'week_day' in keys:
+            result = result.filter(creation_time__week_day=query_params['week_day'])
+
+        if 'month' in keys:
+            result = result.filter(creation_time__month=query_params['month'])
+
+        if 'delivery_time' in keys and bool(query_params['delivery_time']):
+            result = result.annotate(delivery_time=F('delivery_end_time__time') - F('delivery_start_time__time')) \
+                .order_by('-delivery_time')
+
+            # for item in result:
+            #     item['delivery_time'] = str(item['delivery_time'])
+
         if 'group' in keys:
             group_by = [group_by_keys[item] for item in query_params['group'].split(',')]
             result = result.values(*group_by)
@@ -128,7 +141,6 @@ class StatisticView(GenericAPIView):
                     .order_by('-number_of_delivered_orders')
             else:
                 result = result.annotate(number_of_pizza=Sum('pizzas__number_of_pizza')).order_by('-number_of_pizza')
-
         else:
             result = OrderSerializer(instance=result, many=True).data
 
