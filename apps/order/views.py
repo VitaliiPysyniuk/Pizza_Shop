@@ -130,6 +130,7 @@ class StatisticView(GenericAPIView):
 
         if 'group' in query_params:
             group_by = [group_by_fields[field] for field in query_params['group'].split(',')]
+            print(group_by)
             result = result.values(*group_by)
 
             if 'courier' in query_params['group'].split(','):
@@ -139,7 +140,7 @@ class StatisticView(GenericAPIView):
                 result = result.annotate(number_of_pizza=Sum('pizzas__number_of_pizza')).order_by('-number_of_pizza')
 
             result = result.annotate(delivery_time__avg=Avg('delivery_time')) \
-                .order_by('-number_of_pizza', 'delivery_time__avg')
+                .order_by('delivery_time__avg')
 
             for item in result:
                 item['delivery_time__avg'] = str(item['delivery_time__avg']).split('.')[0]
