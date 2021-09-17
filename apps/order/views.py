@@ -1,4 +1,4 @@
-from rest_framework.generics import RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView,\
+from rest_framework.generics import RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, \
     GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from ..user.serializers import UserSerializer
 import pytz
-from django.db.models import Count, Sum, F
+from django.db.models import Count, Sum, Avg
 from datetime import datetime
 
 from .models import OrderModel, OrderPizzaSizeModel
@@ -46,7 +46,6 @@ class OrderCreateView(GenericAPIView):
 class OrderListView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = OrderSerializer
-    queryset = OrderModel.objects.all()
 
     def get_queryset(self):
         user = self.request.user
@@ -106,17 +105,16 @@ class StatisticView(GenericAPIView):
 
     def get(self, *args, **kwargs):
         query_params = self.request.query_params
-        keys = query_params.keys()
-        group_by_keys = {'title': 'pizzas__pizza_size__pizza__title', 'size': 'pizzas__pizza_size',
-                         'courier': 'courier', 'week_day': 'creation_time__week_day', 'month': 'creation_time__month'}
+        group_by_fields = {'title': 'pizzas__pizza_size__pizza__title', 'size': 'pizzas__pizza_size',
+                           'courier': 'courier', 'week_day': 'creation_time__week_day', 'month': 'creation_time__month'}
 
         result = OrderModel.objects.all()
 
-        if 'date_from' in keys and 'date_to' in keys:
+        if 'date_from' in query_params and 'date_to' in query_params:
             result = result.filter(creation_time__date__gte=query_params['date_from'],
                                    creation_time__date__lte=query_params['date_to'])
 
-        if 'hour_from' in keys and 'hour_to' in keys:
+        if 'hour_from' in query_params and 'hour_to' in query_params:
             if int(query_params['hour_to']) >= int(query_params['hour_from']):
                 result = result.filter(creation_time__hour__gte=query_params['hour_from'],
                                        creation_time__hour__lte=query_params['hour_to'])
@@ -124,18 +122,14 @@ class StatisticView(GenericAPIView):
                 result = result.filter(creation_time__hour__gte=query_params['hour_to'],
                                        creation_time__hour__lte=query_params['hour_from'])
 
-        if 'week_day' in keys:
+        if 'week_day' in query_params:
             result = result.filter(creation_time__week_day=query_params['week_day'])
 
-        if 'month' in keys:
+        if 'month' in query_params:
             result = result.filter(creation_time__month=query_params['month'])
 
-        if 'delivery_time' in keys and bool(query_params['delivery_time']):
-            result = result.annotate(delivery_time=F('delivery_end_time__time') - F('delivery_start_time__time')) \
-                .order_by('-delivery_time')
-
-        if 'group' in keys:
-            group_by = [group_by_keys[item] for item in query_params['group'].split(',')]
+        if 'group' in query_params:
+            group_by = [group_by_fields[field] for field in query_params['group'].split(',')]
             result = result.values(*group_by)
 
             if 'courier' in query_params['group'].split(','):
@@ -143,7 +137,15 @@ class StatisticView(GenericAPIView):
                     .order_by('-number_of_delivered_orders')
             else:
                 result = result.annotate(number_of_pizza=Sum('pizzas__number_of_pizza')).order_by('-number_of_pizza')
+
+            result = result.annotate(delivery_time__avg=Avg('delivery_time')) \
+                .order_by('-number_of_pizza', 'delivery_time__avg')
+
+            for item in result:
+                item['delivery_time__avg'] = str(item['delivery_time__avg']).split('.')[0]
+
         else:
+            result = result.order_by('delivery_time')
             result = OrderSerializer(instance=result, many=True).data
 
         return Response(result, status=status.HTTP_200_OK)

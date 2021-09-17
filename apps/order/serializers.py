@@ -24,6 +24,7 @@ class OrderSerializer(ModelSerializer):
         pizzas = list(validated_data.pop('pizzas'))
         order = OrderModel.objects.create(**validated_data)
         total = 0
+
         for pizza in pizzas:
             pizza_size_serializer = PizzaSizeSerializer(pizza['pizza_size'])
             pizza['pizza_size'] = pizza_size_serializer.data.get('id')
@@ -31,7 +32,8 @@ class OrderSerializer(ModelSerializer):
             serializer.is_valid(raise_exception=True)
             serializer.save(order=order)
             total += pizza_size_serializer.data.get('price') * pizza['number_of_pizza']
+
         order.total = total
+        order.save()
 
         return order
-

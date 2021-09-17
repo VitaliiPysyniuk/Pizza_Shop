@@ -16,12 +16,13 @@ class UserRegisterSerializer(ModelSerializer):
         user = UserModel.objects.create_user(**validated_data)
         token = Email.create_email_token(user)
         data = {
-            'subject': 'Account activation from Pizza shop',
+            'subject': 'Account activation from Pizza shop.',
             'body': f'Dear, {user.first_name} {user.last_name}.\n'
                     f'Tap on the link below to activate your account.\n'
                     f'Link: http://localhost:8000/api/v1/auth/activate?token={token}',
             'to': [user.email]
         }
         Email.send_email(**data)
+
         return user
 
