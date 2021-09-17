@@ -18,8 +18,8 @@ class UserActivateView(GenericAPIView):
     permission_classes = [AllowAny]
 
     def get(self, *args, **kwargs):
-        print(self.request.query_params)
         token = self.request.query_params.get('token')
+
         try:
             token = RefreshToken(token)
             user_id = token.payload.get('user_id')
@@ -30,7 +30,8 @@ class UserActivateView(GenericAPIView):
         user = get_object_or_404(CustomUserModel, pk=user_id)
         user.is_active = True
         user.save()
-        serializer = UserRegisterSerializer(user)
+        serializer = UserRegisterSerializer(user=user)
+
         return Response(serializer.data, status.HTTP_200_OK)
 
 
