@@ -7,7 +7,7 @@ from ..pizza.models import PizzaSizeModel
 
 class OrderModel(models.Model):
     class Meta:
-        db_table = 'order'
+        db_table = 'orders'
 
     status = models.CharField(max_length=24, default='created')
     creation_time = models.DateTimeField(auto_now_add=True)
@@ -25,7 +25,7 @@ class OrderModel(models.Model):
 
 class OrderPizzaSizeModel(models.Model):
     class Meta:
-        db_table = 'order_pizza'
+        db_table = 'order_pizzas'
 
     number_of_pizza = models.SmallIntegerField()
 

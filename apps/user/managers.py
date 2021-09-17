@@ -11,7 +11,7 @@ class CustomUserManager(BaseUserManager):
 
     def create_superuser(self, email, password, **extra_kwargs):
         extra_kwargs.setdefault('role', 'manager')
-        extra_kwargs.setdefault('is_active', False)
+        extra_kwargs.setdefault('is_active', True)
 
         if extra_kwargs.get('role') != 'manager':
             raise ValueError('User role has to be \'manager\'.')

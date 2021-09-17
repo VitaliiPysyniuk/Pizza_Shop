@@ -5,7 +5,7 @@ from .services import upload_to
 
 class PizzaModel(models.Model):
     class Meta:
-        db_table = 'pizza'
+        db_table = 'pizzas'
 
     title = models.CharField(max_length=30, unique=True)
     ingredients = models.CharField(max_length=200, unique=True)
@@ -15,9 +15,9 @@ class PizzaModel(models.Model):
 
 class PizzaSizeModel(models.Model):
     class Meta:
-        db_table = 'pizza_size'
+        db_table = 'pizza_sizes'
 
-    diameter = models.SmallIntegerField()
+    diameter = models.CharField(max_length=5)
     weight = models.SmallIntegerField()
     price = models.SmallIntegerField()
 

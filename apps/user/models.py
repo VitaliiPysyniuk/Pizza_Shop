@@ -7,7 +7,7 @@ from ..pizza.models import PizzaSizeModel
 
 class CustomUserModel(AbstractBaseUser, PermissionsMixin):
     class Meta:
-        db_table = 'user'
+        db_table = 'users'
 
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=200)
