@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
-    'rest_framework_swagger',
+    'drf_yasg',
 
     'apps.authentication',
     'apps.user',
@@ -141,21 +141,18 @@ APPEND_SLASH = False
 
 # Swagger settings
 SWAGGER_SETTINGS = {
-    # 'SHOW_REQUEST_HEADERS': True,
+    'SHOW_REQUEST_HEADERS': True,
     'USE_SESSION_AUTH': False,
     'SECURITY_DEFINITIONS': {
         "Bearer": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
-        }
+        },
         # "Bearer": {
         #     "type": "http",
         #     "scheme": "bearer",
         #     "bearerFormat": "JWT",
         # }
     }
-
 }
-
-REST_FRAMEWORK = {'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'}
