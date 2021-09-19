@@ -16,11 +16,9 @@ Including another URLconf
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
-# from .yasg import urlpatterns as doc_url
 
 urlpatterns = [
     path('api/v1', include('api.urls_v1')),
 ]
 
-# urlpatterns += doc_url
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

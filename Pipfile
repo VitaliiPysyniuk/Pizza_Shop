@@ -13,9 +13,13 @@ mysqlclient = "*"
 psycopg2 = "*"
 psycopg2-binary = "*"
 coverage = "*"
-drf-yasg = "*"
 requests = "*"
 numpy = "*"
+packaging = "*"
+django-rest-swagger = "*"
+pyyaml = "*"
+uritemplate = "*"
+coreapi = "*"
 
 [dev-packages]
 

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    'rest_framework_swagger',
 
     'apps.authentication',
     'apps.user',
@@ -137,3 +138,24 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'images')
 APPEND_SLASH = False
+
+# Swagger settings
+SWAGGER_SETTINGS = {
+    # 'SHOW_REQUEST_HEADERS': True,
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+        # "Bearer": {
+        #     "type": "http",
+        #     "scheme": "bearer",
+        #     "bearerFormat": "JWT",
+        # }
+    }
+
+}
+
+REST_FRAMEWORK = {'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'}

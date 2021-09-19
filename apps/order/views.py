@@ -19,6 +19,7 @@ UserModel = get_user_model()
 
 class OrderCreateView(GenericAPIView):
     permission_classes = [AllowAny]
+    serializer_class = OrderSerializer
 
     def post(self, request, *args, **kwargs):
         delivery_address = self.request.data['delivery_address']
