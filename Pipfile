@@ -21,6 +21,7 @@ pyyaml = "*"
 uritemplate = "*"
 coreapi = "*"
 drf-yasg = "*"
+drf-spectacular = "*"
 
 [dev-packages]
 

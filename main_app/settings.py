@@ -14,8 +14,6 @@ from pathlib import Path
 
 from configs import *
 
-# from apps.user.models import UserModel
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -44,7 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
-    'drf_yasg',
+    'drf_spectacular',
 
     'apps.authentication',
     'apps.user',
@@ -139,20 +137,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'images')
 APPEND_SLASH = False
 
-# Swagger settings
-SWAGGER_SETTINGS = {
-    'SHOW_REQUEST_HEADERS': True,
-    'USE_SESSION_AUTH': False,
-    'SECURITY_DEFINITIONS': {
-        "Bearer": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        },
-        # "Bearer": {
-        #     "type": "http",
-        #     "scheme": "bearer",
-        #     "bearerFormat": "JWT",
-        # }
-    }
-}
+
+
+
