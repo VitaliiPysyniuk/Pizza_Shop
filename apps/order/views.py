@@ -1,5 +1,5 @@
 from rest_framework.generics import RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, \
-    GenericAPIView
+    GenericAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.response import Response
@@ -64,8 +64,9 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
 
     def get_permissions(self):
         data = self.request.data
+        order = get_object_or_404(OrderModel, pk=self.kwargs.get('pk'))
 
-        if list(data) == ['status']:
+        if list(data) == ['status'] and self.request.user == order.courier:
             return [IsAuthenticated(), IsCourier()]
         return [IsAuthenticated(), IsManager()]
 
@@ -100,8 +101,7 @@ class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
 
 
 class StatisticView(GenericAPIView):
-    # permission_classes = [IsAuthenticated, IsManager]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsManager]
 
     def get(self, *args, **kwargs):
         query_params = self.request.query_params
