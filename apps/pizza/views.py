@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework.generics import ListAPIView, CreateAPIView, get_object_or_404, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
@@ -17,10 +18,19 @@ class PizzaCreateView(CreateAPIView):
     serializer_class = PizzaSerializer
 
 
+@extend_schema_view(
+    put=extend_schema(exclude=True)
+)
 class PizzaUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsManager]
     queryset = PizzaModel.objects.all()
     serializer_class = PizzaSerializer
+
+    def get_object(self):
+        lookup_kwargs = {
+            'id': self.kwargs.get('pizza_id')
+        }
+        return self.get_queryset().get(**lookup_kwargs)
 
 
 class PizzaSizeCreateView(CreateAPIView):
@@ -33,15 +43,21 @@ class PizzaSizeCreateView(CreateAPIView):
         serializer.save(pizza=pizza)
 
 
+@extend_schema_view(
+    put=extend_schema(exclude=True)
+)
 class PizzaSizeUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsManager]
     serializer_class = PizzaSizeSerializer
+    queryset = PizzaSizeModel.objects.all()
 
-    def get_queryset(self):
-        pizza_id = self.kwargs.get('pizza_id')
-        pk = self.kwargs.get('pk')
-        queryset = PizzaSizeModel.objects.filter(pizza_id=pizza_id, id=pk)
-        return queryset
+    def get_object(self):
+        lookup_kwargs = {
+            'pizza_id': self.kwargs.get('pizza_id'),
+            'id': self.kwargs.get('pizza_size_id')
+        }
+        return self.get_queryset().get(**lookup_kwargs)
+
 
 
 

@@ -10,7 +10,7 @@ class PizzaModel(models.Model):
     title = models.CharField(max_length=30, unique=True)
     ingredients = models.CharField(max_length=200, unique=True)
     category = models.CharField(max_length=15)
-    image = models.FileField(upload_to=upload_to, default=None)
+    image = models.FileField(upload_to=upload_to)
 
 
 class PizzaSizeModel(models.Model):

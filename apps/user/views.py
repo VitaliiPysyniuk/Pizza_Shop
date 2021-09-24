@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework.generics import ListCreateAPIView, DestroyAPIView, RetrieveUpdateAPIView, ListAPIView, \
     GenericAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -20,16 +21,25 @@ class UserCreateListView(ListCreateAPIView):
     serializer_class = UserSerializer
 
 
+@extend_schema_view(
+    put=extend_schema(exclude=True)
+)
 class UserRetrieveUpdateView(RetrieveUpdateAPIView):
-    queryset = UserModel.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsManager]
+    queryset = UserModel.objects.all()
 
     def get_permissions(self):
         keys = self.request.data.keys()
         if ('role' in keys) or ('is_active' in keys) or (self.request.user.id == self.kwargs.get('pk')):
             return [IsAuthenticated(), IsManager()]
         return [IsAuthenticated()]
+
+    def get_object(self):
+        lookup_kwargs = {
+            'id': self.kwargs.get('user_id')
+        }
+        return self.get_queryset().get(**lookup_kwargs)
 
 
 class UserFavoritesListView(ListAPIView):
@@ -60,11 +70,14 @@ class UserFavoritesListCreateView(ListCreateAPIView):
 
 class UserFavoriteDeleteView(DestroyAPIView):
     permission_classes = [IsAuthenticated]
+    queryset = UserFavoritesModel.objects.all()
 
     def get_object(self):
-        pk = self.kwargs.get('pk')
-        queryset = UserFavoritesModel.objects.filter(pk=pk)
-        return queryset
+        lookup_kwargs = {
+            'user_id': self.kwargs.get('user_id'),
+            'id': self.kwargs.get('favorite_id')
+        }
+        return self.get_queryset().get(**lookup_kwargs)
 
 
 class CourierDeliveriesSortView(GenericAPIView):
@@ -106,5 +119,6 @@ class CourierDeliveriesSortView(GenericAPIView):
 
         route_points.append(route[-1]['to'])
 
-        result = {'route_points': route_points, 'route': route}
+        # result = {'route_points': route_points, 'route': route}
+        result = {'route_points': route_points}
         return Response(result, status.HTTP_200_OK)

@@ -15,7 +15,7 @@ class CustomUserModel(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=30)
     phone_number = models.CharField(max_length=14, unique=True)
     role = models.CharField(max_length=7, default='user')
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField()
     creation_time = models.DateTimeField(auto_now_add=True)
 
     last_login = None
