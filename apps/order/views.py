@@ -213,29 +213,41 @@ class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
         parameters=[
             OpenApiParameter(name='date_from', type=str, required=False, location='query',
                              description='The date from which orders are selected.',
-                             examples=[OpenApiExample(name='date_to example', value='2021-09-19')]
+                             examples=[
+                                 OpenApiExample(name='none', value=''),
+                                 OpenApiExample(name='date_to example', value='2021-09-19')]
                              ),
             OpenApiParameter(name='date_to', type=str, required=False, location='query',
                              description='The date from which orders are selected.',
-                             examples=[OpenApiExample(name='date_from example', value='2021-09-21')]
+                             examples=[
+                                 OpenApiExample(name='none', value=''),
+                                 OpenApiExample(name='date_from example', value='2021-09-21')]
                              ),
             OpenApiParameter(name='hour_from', type=int, required=False, location='query',
                              description='The hour from which orders are selected.',
-                             examples=[OpenApiExample(name='hour_from example', value='11')]
+                             examples=[
+                                 OpenApiExample(name='none', value=''),
+                                 OpenApiExample(name='hour_from example', value='11')]
                              ),
             OpenApiParameter(name='hour_to', type=int, required=False, location='query',
                              description='The hour to which orders are selected.',
-                             examples=[OpenApiExample(name='hour_to example', value='18')]
+                             examples=[
+                                 OpenApiExample(name='none', value=''),
+                                 OpenApiExample(name='hour_to example', value='18')]
                              ),
             OpenApiParameter(name='week_day', type=int, required=False, location='query',
                              description='The day of the week for selecting orders for that day.',
-                             examples=[OpenApiExample(name='Sunday example', value='1'),
-                                       OpenApiExample(name='Friday example', value='6')]
+                             examples=[
+                                 OpenApiExample(name='none', value=''),
+                                 OpenApiExample(name='Sunday example', value='1'),
+                                 OpenApiExample(name='Friday example', value='6')]
                              ),
             OpenApiParameter(name='month', type=int, required=False, location='query',
                              description='The number of month k for selecting orders for that month.',
-                             examples=[OpenApiExample(name='September example', value='9'),
-                                       OpenApiExample(name='December example', value='12')]
+                             examples=[
+                                 OpenApiExample(name='none', value=''),
+                                 OpenApiExample(name='September example', value='9'),
+                                 OpenApiExample(name='December example', value='12')]
                              ),
             OpenApiParameter(name='group', type=str, required=False, location='query',
                              description='Parameter for grouping result can involve a few items: title - for grouping'
@@ -243,9 +255,11 @@ class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
                                          'for grouping by the courier, week_day - for grouping by the day of the week, '
                                          'month - for grouping by the month.',
                              examples=[
-                                 OpenApiExample(name='group example 1', value='size,week_day'),
-                                 OpenApiExample(name='group example 2', value='title,size,courier,month'),
-                                 OpenApiExample(name='group example 3', value='title,courier')]
+                                 OpenApiExample(name='none', value=''),
+                                 OpenApiExample(name='group example 1', value='title,size,week_day'),
+                                 OpenApiExample(name='group example 2', value='title,week_day'),
+                                 OpenApiExample(name='group example 3', value='title,size,courier,month'),
+                                 OpenApiExample(name='group example 4', value='title,courier')]
                              ),
         ]
     )
