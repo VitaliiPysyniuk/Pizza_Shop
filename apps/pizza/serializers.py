@@ -1,3 +1,4 @@
+from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
 from .models import PizzaModel, PizzaSizeModel
@@ -12,12 +13,20 @@ class PizzaSizeSerializer(ModelSerializer):
 
 
 class PizzaSerializer(ModelSerializer):
+
+    class Meta:
+        model = PizzaModel
+        fields = ['id', 'title', 'ingredients', 'image']
+
+
+class FullPizzaSerializer(ModelSerializer):
     sizes = PizzaSizeSerializer(many=True, required=False)
 
     class Meta:
         model = PizzaModel
         fields = ['id', 'title', 'ingredients', 'image', 'sizes']
         extra_kwargs = {'sizes': {'read_only': True}}
+
 
 
 

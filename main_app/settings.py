@@ -14,8 +14,6 @@ from pathlib import Path
 
 from configs import *
 
-# from apps.user.models import UserModel
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -44,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
 
     'apps.authentication',
     'apps.user',
@@ -135,5 +134,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'images')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'pizzas_images')
 APPEND_SLASH = False
+
+
+
+

@@ -12,12 +12,21 @@ class OrderPizzaSizeSerializer(ModelSerializer):
 
 
 class OrderSerializer(ModelSerializer):
+
+    class Meta:
+        model = OrderModel
+        fields = ['id', 'user', 'courier', 'status', 'creation_time', 'confirmation_time', 'delivery_start_time',
+                  'delivery_duration', 'delivery_address', 'payment_method', 'comment', 'total']
+        extra_kwargs = {'courier': {'required': False}, 'total': {'read_only': True}, 'user': {'read_only': True}}
+
+
+class FullOrderSerializer(ModelSerializer):
     pizzas = OrderPizzaSizeSerializer(many=True)
 
     class Meta:
         model = OrderModel
         fields = ['id', 'user', 'courier', 'status', 'creation_time', 'confirmation_time', 'delivery_start_time',
-                  'delivery_time', 'delivery_address', 'payment_method', 'comment', 'total', 'pizzas']
+                  'delivery_duration', 'delivery_address', 'payment_method', 'comment', 'total', 'pizzas']
         extra_kwargs = {'courier': {'required': False}, 'total': {'read_only': True}, 'user': {'read_only': True}}
 
     def create(self, validated_data):
