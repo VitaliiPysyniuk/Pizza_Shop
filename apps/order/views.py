@@ -1,5 +1,4 @@
-from rest_framework.generics import RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, \
-    GenericAPIView, get_object_or_404
+from rest_framework.generics import RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.response import Response
@@ -11,7 +10,7 @@ from datetime import datetime
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter, OpenApiExample
 
 from .models import OrderModel, OrderPizzaSizeModel
-from .serializers import OrderSerializer, OrderPizzaSizeSerializer
+from .serializers import OrderSerializer, FullOrderSerializer, OrderPizzaSizeSerializer
 from ..user.permissions import IsManager, IsCourier
 from .services import GeocodingAPI
 
@@ -20,14 +19,14 @@ UserModel = get_user_model()
 
 @extend_schema_view(
     post=extend_schema(
-        summary='Creates new order.',
+        summary='Create new order.',
         description='Creates a new order. If the request user is unauthorized, need to add user data to the'
                     ' request body.'
     )
 )
 class OrderCreateView(GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = OrderSerializer
+    serializer_class = FullOrderSerializer
 
     def post(self, request, *args, **kwargs):
         delivery_address = self.request.data['delivery_address']
@@ -45,7 +44,7 @@ class OrderCreateView(GenericAPIView):
             user_serializer.is_valid(raise_exception=True)
             user = user_serializer.save()
 
-        order_serializer = OrderSerializer(data=self.request.data)
+        order_serializer = FullOrderSerializer(data=self.request.data)
         order_serializer.is_valid()
         order_serializer.save(user=user)
 
@@ -63,7 +62,7 @@ class OrderCreateView(GenericAPIView):
 )
 class OrderListView(ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = OrderSerializer
+    serializer_class = FullOrderSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -84,8 +83,8 @@ class OrderListView(ListAPIView):
                                      description='The id of the specific order.')]
     ),
     patch=extend_schema(
-        summary='Updates the specific order.',
-        description='Order is selected by a set parameter order_id. The anager can change all fields of the order, '
+        summary='Update the specific order.',
+        description='Order is selected by a set parameter order_id. The manager can change all fields of the order, '
                     'the courier can change only the status field of the order.',
         parameters=[OpenApiParameter(name='order_id', type=int, required=True, location='path',
                                      description='The id of the specific order.')]
@@ -93,8 +92,13 @@ class OrderListView(ListAPIView):
     put=extend_schema(exclude=True)
 )
 class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
-    serializer_class = OrderSerializer
-    queryset = OrderPizzaSizeModel.objects.all()
+    queryset = OrderModel.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return FullOrderSerializer
+        else:
+            return OrderSerializer
 
     def get_object(self):
         lookup_kwargs = {
@@ -104,22 +108,38 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
 
     def get_permissions(self):
         data = self.request.data
-        # order = get_object_or_404(OrderModel, pk=self.kwargs.get('pk'))
-        #
-        # if list(data) == ['status'] and self.request.user == order.courier:
         if list(data) == ['status']:
             return [IsAuthenticated(), IsCourier()]
         return [IsAuthenticated(), IsManager()]
 
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except ValueError as err:
+            return Response({'error': str(err)}, status.HTTP_400_BAD_REQUEST)
+
     def perform_update(self, serializer):
         time_fields_depend_on_status = {'confirmed': 'confirmation_time', 'in_the_road': 'delivery_start_time'}
         data = self.request.data
+        print(self.get_object())
+        pizza_to_update = FullOrderSerializer(self.get_object()).data
+        print(pizza_to_update)
         if 'status' in data.keys():
+            if data['status'] == 'confirmed' and pizza_to_update.get('status') != 'created':
+                raise ValueError("To set order status to 'confirmed' the previous order status value must "
+                                 "be 'created'.")
+            elif data['status'] == 'in_the_road' and pizza_to_update.get('status') != 'confirmed':
+                raise ValueError("To set order status to 'in_the_road' the previous order status value must "
+                                 "be 'confirmed'.")
+            elif data['status'] == 'delivered' and pizza_to_update.get('status') != 'in_the_road':
+                raise ValueError("To set order status to 'delivered' the previous order status value must "
+                                 "be 'in_the_road'.")
+
             timezone = pytz.timezone('Etc/GMT-3')
             current_server_time = datetime.now(tz=timezone)
 
             if data['status'] == 'delivered':
-                delivery_start_time = OrderSerializer(self.get_object()).data.get('delivery_start_time')
+                delivery_start_time = pizza_to_update.get('delivery_start_time')
                 delivery_start_time = datetime.strptime(delivery_start_time, "%Y-%m-%dT%H:%M:%S.%f%z")
                 delivery_duration = current_server_time - delivery_start_time
                 serializer.save(delivery_duration=str(delivery_duration).split('.')[0])
@@ -135,7 +155,7 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
         summary='Get information about an ordered item from the order.',
         description='Get information about ordered pizza from the order. Order is selected by a set parameter order_id.'
                     ' The pizza is selected by a set parameter pk. The information contains the id of the pizza size '
-                    'and the number of ordered pizzas.',
+                    'and the number of ordered pizzas. Only manager can do this.',
         parameters=[
             OpenApiParameter(name='item_id', type=int, required=True, location='path',
                              description='The id of the specific item of the order.'),
@@ -144,10 +164,11 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
         ]
     ),
     patch=extend_schema(
-        summary='Updates information about an ordered item from the order.',
+        summary='Update information about an ordered item from the order.',
         description='Updates information about ordered pizza from the order. Order is selected by a set parameter '
                     'order_id. The pizza is selected by a set parameter pk. The information contains the id of the '
-                    'pizza size and the number of ordered pizzas only this information can updated.',
+                    'pizza size and the number of ordered pizzas only this information can updated. Only manager can do'
+                    ' this.',
         parameters=[
             OpenApiParameter(name='item_id', type=int, required=True, location='path',
                              description='The id of the specific item of the order.'),
@@ -158,7 +179,7 @@ class OrderRetrieveUpdateView(RetrieveUpdateAPIView):
     delete=extend_schema(
         summary='Delete ordered item from the order.',
         description='Delete ordered pizza from the order. Order is selected by a set parameter order_id. The pizza is '
-                    'selected by a set parameter pk.',
+                    'selected by a set parameter item_id. Only manager can do this.',
         parameters=[
             OpenApiParameter(name='item_id', type=int, required=True, location='path',
                              description='The id of the specific item of the order.'),
@@ -186,7 +207,8 @@ class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     get=extend_schema(
         summary='Get statistics about orders.',
         description='Get statistic data about selected orders. Selection can be specified by the setting of query '
-                    'parameters, also the result data can be grouped by the setting of the specific query parameter.',
+                    'parameters, also the result data can be grouped by the setting of the specific query parameter. '
+                    'Only manager can do this.',
         parameters=[
             OpenApiParameter(name='date_from', type=str, required=False, location='query',
                              description='The date from which orders are selected.',
@@ -220,7 +242,7 @@ class OrderPizzaRetrieveUpdateDeleteView(RetrieveUpdateDestroyAPIView):
                                          'for grouping by the courier, week_day - for grouping by the day of the week, '
                                          'month - for grouping by the month.',
                              examples=[
-                                 OpenApiExample(name='group example 1', value='title,size,courier,week_day,month'),
+                                 OpenApiExample(name='group example 1', value='size,week_day'),
                                  OpenApiExample(name='group example 2', value='title,size,courier,month'),
                                  OpenApiExample(name='group example 3', value='title,courier')]
                              ),
@@ -276,6 +298,6 @@ class StatisticView(GenericAPIView):
 
         else:
             result = result.order_by('delivery_duration')
-            result = OrderSerializer(instance=result, many=True).data
+            result = FullOrderSerializer(instance=result, many=True).data
 
         return Response(result, status=status.HTTP_200_OK)

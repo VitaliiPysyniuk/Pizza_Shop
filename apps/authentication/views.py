@@ -6,9 +6,12 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.contrib.auth import get_user_model
 
 from .seriazlizers import UserRegisterSerializer
-from ..user.models import CustomUserModel
+from ..user.serializers import UserSerializer
+
+UserModel = get_user_model()
 
 
 @extend_schema_view(
@@ -39,10 +42,10 @@ class UserActivateView(GenericAPIView):
         except TokenError as err:
             return Response({'error': str(err)}, status.HTTP_400_BAD_REQUEST)
 
-        user = get_object_or_404(CustomUserModel, pk=user_id)
+        user = get_object_or_404(UserModel, pk=user_id)
         user.is_active = True
         user.save()
-        serializer = UserRegisterSerializer(user=user)
+        serializer = UserRegisterSerializer(instance=user)
 
         return Response(serializer.data, status.HTTP_200_OK)
 

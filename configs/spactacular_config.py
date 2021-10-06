@@ -8,4 +8,5 @@ SPECTACULAR_SETTINGS = {
     'SERVERS': [{'url': '/api/v1'}],
     'SERVE_INCLUDE_SCHEMA': False,
     'SORT_OPERATIONS': False,
+    'COMPONENT_SPLIT_REQUEST': True
 }

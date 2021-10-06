@@ -1,5 +1,4 @@
 from datetime import timedelta
-
 from django.core import mail
 from rest_framework_simplejwt.tokens import RefreshToken
 
