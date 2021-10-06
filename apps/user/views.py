@@ -1,16 +1,11 @@
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-from rest_framework.generics import ListCreateAPIView, DestroyAPIView, RetrieveUpdateAPIView, ListAPIView, \
-    GenericAPIView
+from rest_framework.generics import ListCreateAPIView, DestroyAPIView, RetrieveUpdateAPIView, ListAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 
 from .serializers import UserSerializer, UserFavoritesSerializer
 from .models import UserFavoritesModel
-from .permissions import IsManager, IsCourier
-from ..order.models import OrderModel
-from .services import MapsAPIUse, Solver
+from .permissions import IsManager
 
 UserModel = get_user_model()
 
@@ -135,6 +130,7 @@ class UserFavoritesListCreateView(ListCreateAPIView):
 class UserFavoriteDeleteView(DestroyAPIView):
     permission_classes = [IsAuthenticated]
     queryset = UserFavoritesModel.objects.all()
+    serializer_class = UserFavoritesSerializer
 
     def get_object(self):
         lookup_kwargs = {
@@ -142,54 +138,3 @@ class UserFavoriteDeleteView(DestroyAPIView):
             'id': self.kwargs.get('favorite_id')
         }
         return self.get_queryset().get(**lookup_kwargs)
-
-
-@extend_schema_view(
-    get=extend_schema(
-        summary='Get a consistent list of delivery addresses.',
-        description='Returns a consistent list of delivery address all orders that are related to the authorized '
-                    'courier with the address of the pizzeria at the start and at the end of this list. Only courier '
-                    'can do this.'
-    )
-)
-class CourierDeliveriesSortView(GenericAPIView):
-    permission_classes = [IsAuthenticated, IsManager]
-
-    def get(self, *args, **kwargs):
-        user = self.request.user
-        courier_orders = OrderModel.objects.filter(courier_id=user.id)
-        addresses = ['Шараневича 28, Львів']
-        for order in courier_orders:
-            addresses.append(order.delivery_address)
-
-        params = {
-            'addresses': '|'.join(addresses),
-            'mode': 'driving'
-        }
-
-        maps_api_result = MapsAPIUse.get_value_matrix_between_addresses(**params)
-        duration_matrix = maps_api_result['duration_matrix']
-
-        solver = Solver(duration_matrix)
-        solver_result = solver.branch_and_bound_method()
-
-        tour = solver_result['tour']
-        route = list()
-        route_points = list()
-        previous_place = 0
-        i = 0
-
-        while tour:
-            if tour[i]['from'] == previous_place:
-                route.append({'from': addresses[tour[i]['from']], 'to': addresses[tour[i]['to']]})
-                route_points.append(addresses[tour[i]['from']])
-                previous_place = tour[i]['to']
-                tour.pop(i)
-                i = 0
-                continue
-            i += 1
-
-        route_points.append(route[-1]['to'])
-
-        result = {'route_points': route_points}
-        return Response(result, status.HTTP_200_OK)

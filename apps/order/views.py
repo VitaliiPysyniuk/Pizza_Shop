@@ -13,6 +13,7 @@ from .models import OrderModel, OrderPizzaSizeModel
 from .serializers import OrderSerializer, FullOrderSerializer, OrderPizzaSizeSerializer
 from ..user.permissions import IsManager, IsCourier
 from .services import GeocodingAPI
+from .services import MapsAPIUse, Solver
 
 UserModel = get_user_model()
 
@@ -301,3 +302,59 @@ class StatisticView(GenericAPIView):
             result = FullOrderSerializer(instance=result, many=True).data
 
         return Response(result, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        summary='Get a consistent list of delivery addresses.',
+        description='Returns a consistent list of delivery address all orders that are related to the authorized '
+                    'courier with the address of the pizzeria at the start and at the end of this list. Only courier '
+                    'can do this.'
+    )
+)
+class CourierDeliveriesSortView(GenericAPIView):
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def get(self, *args, **kwargs):
+        user = self.request.user
+        courier_orders = OrderModel.objects.filter(courier_id=user.id)
+        addresses = ['Шараневича 28, Львів']
+        for order in courier_orders:
+            addresses.append(order.delivery_address)
+
+        if len(addresses) == 1:
+            addresses = ['Шараневича 28, Львів', 'Шараневича 28, Львів']
+            result = {'route_points': addresses}
+            return Response(result, status.HTTP_200_OK)
+
+        params = {
+            'addresses': '|'.join(addresses),
+            'mode': 'driving'
+        }
+
+        maps_api_result = MapsAPIUse.get_value_matrix_between_addresses(**params)
+        duration_matrix = maps_api_result['duration_matrix']
+
+        solver = Solver(duration_matrix)
+        solver_result = solver.branch_and_bound_method()
+
+        tour = solver_result['tour']
+        route = list()
+        route_points = list()
+        previous_place = 0
+        i = 0
+
+        while tour:
+            if tour[i]['from'] == previous_place:
+                route.append({'from': addresses[tour[i]['from']], 'to': addresses[tour[i]['to']]})
+                route_points.append(addresses[tour[i]['from']])
+                previous_place = tour[i]['to']
+                tour.pop(i)
+                i = 0
+                continue
+            i += 1
+
+        route_points.append(route[-1]['to'])
+
+        result = {'route_points': route_points}
+        return Response(result, status.HTTP_200_OK)
